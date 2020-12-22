@@ -194,7 +194,7 @@ int main()
     cv::Mat current_frame;
     cv::Mat prev_frame_gray;
     cv::Mat current_frame_gray;
-    std::string base_path = "/home/yucheng/1.feature/data/12_11/60Hz/";
+    std::string base_path = "../data/12_11/60Hz/";
     std::string current_file_path = base_path + "1.bmp";
     current_frame = cv::imread(current_file_path);
     int frame_id = 2;
@@ -209,7 +209,7 @@ int main()
         //使用灰度图像进行角点检测
         cv::cvtColor(current_frame, current_frame_gray, cv::COLOR_BGR2GRAY);
 
-        cv::Mat temp_frame = cv::imread("/home/yucheng/1.feature/data/temp_color.bmp", -1);
+        cv::Mat temp_frame = cv::imread("../data/temp_color.bmp", -1);
         cv::Mat temp_frame_gray;
         cv::cvtColor(temp_frame, temp_frame_gray, cv::COLOR_BGR2GRAY);
 
