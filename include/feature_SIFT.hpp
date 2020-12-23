@@ -1,5 +1,5 @@
-#ifndef FEATURE_SIFT
-#define FEATURE_SIFT
+#ifndef FEATURE_SIFT_HPP
+#define FEATURE_SIFT_HPP
 
 #include "opencv2/core.hpp"
 #include "opencv2/xfeatures2d.hpp"
@@ -54,7 +54,7 @@ typedef float sift_wt;
 static const int SIFT_FIXPT_SCALE = 1;
 #endif
 
-void calKeyPointbySIFT(InputArray image,
+void calKeyPointbySIFT(InputArray _image,
                        std::vector<cv::Point2f> corners,
                        std::vector<KeyPoint> &keypoints);
 
@@ -64,4 +64,4 @@ void calDescriptorsbySIFT(InputArray _image,
 
 bool removeNoiseByStd(std::vector<cv::Point2f> &temp_point_vec, std::vector<cv::Point2f> &current_point_vec);
 
-#endif // !FEATURE_SIFT
+#endif // !FEATURE_SIFT_HPP

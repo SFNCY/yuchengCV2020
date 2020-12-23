@@ -1,5 +1,5 @@
-#ifndef  FEATURE_GOOD_FEATURE
-#define  FEATURE_GOOD_FEATURE
+#ifndef  FEATURE_GOOD_FEATURE_HPP
+#define  FEATURE_GOOD_FEATURE_HPP
 
 #include "opencv2/core.hpp"
 #include "opencv2/xfeatures2d.hpp"
@@ -17,5 +17,5 @@ CV_EXPORTS_W void getGoodFeatures(InputArray image, OutputArray corners,
                                   int gradientSize, bool useHarrisDetector = false,
                                   double k = 0.04);
 
-#endif // ! FEATURE_GOOD_--FEATURE
+#endif // ! FEATURE_GOOD_FEATURE_HPP
 

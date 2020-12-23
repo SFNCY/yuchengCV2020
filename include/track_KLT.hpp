@@ -1,5 +1,5 @@
-#ifndef KLT_HPP
-#define KLT_HPP
+#ifndef TRACK_KLT_HPP
+#define TRACK_KLT_HPP
 
 #include <iostream>
 
@@ -50,4 +50,4 @@ void yuchengcalcOpticalFlowPyrLK(InputArray _prevImg, InputArray _nextImg,
                                  TermCriteria criteria,
                                  int flags, double minEigThreshold);
 
-#endif // !KLT_HPP
+#endif // !TRACK_KLT_HPP

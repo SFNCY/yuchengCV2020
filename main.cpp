@@ -11,6 +11,7 @@
 #include <opencv2/flann/flann.hpp>
 
 #include "feature_SIFT.hpp"
+#include "feature_EAS.hpp"
 #include "track_KLT.hpp"
 
 #include <time.h>
@@ -32,6 +33,19 @@ public:
     std::vector<cv::Point2f> corners1, corners2;
     // bool track_failed = true;
     // cv::Mat prevGray;
+
+    bool updateEASFeature(cv::Mat temp, cv::Mat current)
+    {
+        temp_track_points.clear();
+        current_track_points.clear();
+        // if (prevGray.empty())
+        //     current.copyTo(prevGray);
+        keyPoint1.clear();
+        keyPoint2.clear();
+
+        calKeyPointbyEAS(temp, corners1, keyPoint1);
+        // calKeyPointbyEAS(current, corners2, keyPoint2);
+    }
 
     bool updateSIFTFeature(cv::Mat temp, cv::Mat current)
     {
@@ -194,7 +208,8 @@ int main()
     cv::Mat current_frame;
     cv::Mat prev_frame_gray;
     cv::Mat current_frame_gray;
-    std::string base_path = "../data/12_11/60Hz/";
+    // std::string base_path = "../data/12_11/60Hz/";
+    std::string base_path = "/home/yucheng/1.feature/data/12_11/60Hz/";
     std::string current_file_path = base_path + "1.bmp";
     current_frame = cv::imread(current_file_path);
     int frame_id = 2;
@@ -216,7 +231,9 @@ int main()
         if (track_failed)
         {
             bool update_secussed = false;
-            update_secussed = feature_extractor.updateSIFTFeature(temp_frame_gray, current_frame_gray);
+            // update_secussed = feature_extractor.updateSIFTFeature(temp_frame_gray, current_frame_gray);
+
+            update_secussed = feature_extractor.updateEASFeature(temp_frame_gray, current_frame_gray);
 
             if (!update_secussed)
             {
