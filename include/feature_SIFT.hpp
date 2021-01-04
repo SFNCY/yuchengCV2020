@@ -62,6 +62,10 @@ void calDescriptorsbySIFT(InputArray _image,
                           std::vector<KeyPoint> &keypoints,
                           OutputArray _descriptors);
 
+void calKeypointswithDescriptorsbySIFT(InputArray _image,
+                                       std::vector<KeyPoint> &keypoints,
+                                       OutputArray _descriptors);
+
 bool removeNoiseByStd(std::vector<cv::Point2f> &temp_point_vec, std::vector<cv::Point2f> &current_point_vec);
 
 #endif // !FEATURE_SIFT_HPP

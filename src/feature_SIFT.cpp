@@ -973,7 +973,6 @@ void calDescriptorsbySIFT(InputArray _image,
                           std::vector<KeyPoint> &keypoints,
                           OutputArray _descriptors)
 {
-    std::cout << "SIFT!" << std::endl;
     int nOctaveLayers = 3;
     double sigma = 1.6;
 
@@ -1010,6 +1009,92 @@ void calDescriptorsbySIFT(InputArray _image,
 
     //t = (double)getTickCount() - t;
     //printf("pyramid construction time: %g\n", t*1000./tf);
+
+    if (_descriptors.needed())
+    {
+        //t = (double)getTickCount();
+        int dsize = descriptorSize();
+        _descriptors.create((int)keypoints.size(), dsize, CV_32F);
+        Mat descriptors = _descriptors.getMat();
+
+        calcDescriptors(gpyr, keypoints, descriptors, nOctaveLayers, firstOctave);
+        //t = (double)getTickCount() - t;
+        //printf("descriptor extraction time: %g\n", t*1000./tf);
+    }
+}
+
+void calKeypointswithDescriptorsbySIFT(InputArray _image,
+                                       std::vector<KeyPoint> &keypoints,
+                                       OutputArray _descriptors)
+{
+    int nOctaveLayers = 3;
+    double sigma = 1.6;
+    int nfeatures = 0;
+
+    if (_image.empty())
+    {
+        keypoints.clear();
+        return;
+    }
+
+    int firstOctave = -1, actualNOctaves = 0, actualNLayers = 0;
+    Mat image = _image.getMat();
+
+    if (image.empty() || image.depth() != CV_8U)
+        CV_Error(Error::StsBadArg, "image is empty or has incorrect depth (!=CV_8U)");
+
+    cv::Mat base = createInitialImage(image, firstOctave < 0, (float)sigma);
+
+    std::vector<Mat> gpyr, dogpyr;
+    int nOctaves = actualNOctaves > 0 ? actualNOctaves : cvRound(std::log((double)std::min(base.cols, base.rows)) / std::log(2.) - 2) - firstOctave;
+
+    //double t, tf = getTickFrequency();
+    //t = (double)getTickCount();
+    buildGaussianPyramid(base, gpyr, nOctaves);
+    buildDoGPyramid(gpyr, dogpyr);
+    // cv::Mat a;
+    // for (int i = 0; i < gpyr.size(); i++)
+    // {
+    //     a = gpyr[i];
+    //     int j = 10;
+    // }
+
+    //t = (double)getTickCount();
+    findScaleSpaceExtrema(gpyr, dogpyr, keypoints);
+    KeyPointsFilter::removeDuplicatedSorted(keypoints);
+
+    if (nfeatures > 0)
+        KeyPointsFilter::retainBest(keypoints, nfeatures);
+    //t = (double)getTickCount() - t;
+    //printf("keypoint detection time: %g\n", t*1000./tf);
+
+    if (firstOctave < 0)
+    {
+        for (size_t i = 0; i < keypoints.size(); i++)
+        {
+            KeyPoint &kpt = keypoints[i];
+            float scale = 1.f / (float)(1 << -firstOctave);
+            kpt.octave = (kpt.octave & ~255) | ((kpt.octave + firstOctave) & 255);
+            kpt.pt *= scale;
+            kpt.size *= scale;
+        }
+    }
+
+    firstOctave = 0;
+    int maxOctave = INT_MIN;
+    for (size_t i = 0; i < keypoints.size(); i++)
+    {
+        int octave, layer;
+        float scale;
+        unpackOctave(keypoints[i], octave, layer, scale);
+        firstOctave = std::min(firstOctave, octave);
+        maxOctave = std::max(maxOctave, octave);
+        actualNLayers = std::max(actualNLayers, layer - 2);
+    }
+
+    firstOctave = std::min(firstOctave, 0);
+    CV_Assert(firstOctave >= -1 && actualNLayers <= nOctaveLayers);
+    actualNOctaves = maxOctave - firstOctave + 1;
 
     if (_descriptors.needed())
     {

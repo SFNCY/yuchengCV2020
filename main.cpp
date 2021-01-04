@@ -17,6 +17,8 @@
 #include <time.h>
 #include <sys/time.h>
 
+#define USE_OPTICAL_FLOW false
+
 template <class Type>
 std::string num2str(Type num)
 {
@@ -44,7 +46,20 @@ public:
         keyPoint2.clear();
 
         calKeyPointbyEAS(temp, corners1, keyPoint1);
-        // calKeyPointbyEAS(current, corners2, keyPoint2);
+        cv::Mat out_temp;
+        cv::drawKeypoints(temp, keyPoint1, out_temp, Scalar::all(-1), DrawMatchesFlags::DRAW_RICH_KEYPOINTS);
+        calKeyPointbyEAS(current, corners2, keyPoint2);
+        cv::Mat out_current;
+        cv::drawKeypoints(current, keyPoint2, out_current, Scalar::all(-1), DrawMatchesFlags::DRAW_RICH_KEYPOINTS);
+
+        // cv::imwrite("/home/yucheng/Code/1.Visual_Servoing/1.offline/1.track/yuchengCV2020/data/Lena_out.bmp", out_temp);
+
+        cv::namedWindow("out_temp", cv::WINDOW_NORMAL);
+        cv::namedWindow("out_current", cv::WINDOW_NORMAL);
+        cv::imshow("out_temp", out_temp);
+        cv::imshow("out_current", out_current);
+        cv::waitKey(0);
+        cv::destroyAllWindows();
     }
 
     bool updateSIFTFeature(cv::Mat temp, cv::Mat current)
@@ -56,32 +71,26 @@ public:
         keyPoint1.clear();
         keyPoint2.clear();
 
-        // timeval t_start, t_end;
-        // clock_t startTime, endTime;
-        // gettimeofday(&t_start, NULL);
-        // startTime = clock();
-        calKeyPointbySIFT(temp, corners1, keyPoint1);
-        calKeyPointbySIFT(current, corners2, keyPoint2);
-        // endTime = clock();
-        // gettimeofday(&t_end, NULL);
-        // std::cout << "clock_t Time : " << (double)(endTime - startTime) / CLOCKS_PER_SEC << "s" << std::endl;
-        // double delta_t = (t_end.tv_sec - t_start.tv_sec) +
-        //                  (t_end.tv_usec - t_start.tv_usec) / 1000000.0;
-        // std::cout << "multi-thread time : " << delta_t << "s" << std::endl;
+        // calKeyPointbySIFT(temp, corners1, keyPoint1);
+        // calKeyPointbySIFT(current, corners2, keyPoint2);
+
+        // if (keyPoint1.size() < 6 || keyPoint2.size() < 6)
+        // {
+        //     return false;
+        // }
+
+        Mat des1, des2;
+
+        // calDescriptorsbySIFT(temp, keyPoint1, des1);
+        // calDescriptorsbySIFT(current, keyPoint2, des2);
+
+        calKeypointswithDescriptorsbySIFT(temp, keyPoint1, des1);
+        calKeypointswithDescriptorsbySIFT(current, keyPoint2, des2);
 
         if (keyPoint1.size() < 6 || keyPoint2.size() < 6)
         {
             return false;
         }
-
-        // cv::Ptr<cv::xfeatures2d::SiftDescriptorExtractor> descriptor = cv::xfeatures2d::SiftDescriptorExtractor::create();
-        Mat des1, des2;
-
-        // descriptor->compute(temp, keyPoint1, des1);
-        // descriptor->compute(current, keyPoint2, des2);
-
-        calDescriptorsbySIFT(temp, keyPoint1, des1);
-        calDescriptorsbySIFT(current, keyPoint2, des2);
 
         cv::Ptr<cv::DescriptorMatcher>
             matcher = cv::DescriptorMatcher::create("FlannBased");
@@ -102,16 +111,16 @@ public:
                 goodMatches.push_back(bestMatch);
             }
         }
-        std::cout << "The number of good matches:" << goodMatches.size() << std::endl;
+        // std::cout << "The number of good matches:" << goodMatches.size() << std::endl;
         //画出匹配结果
-        // Mat img_out;
+        // cv::Mat img_out;
         //红色连接的是匹配的特征点数，绿色连接的是未匹配的特征点数
         //matchColor – Color of matches (lines and connected keypoints). If matchColor==Scalar::all(-1) , the color is generated randomly.
         //singlePointColor – Color of single keypoints(circles), which means that keypoints do not have the matches.If singlePointColor == Scalar::all(-1), the color is generated randomly.
         //CV_RGB(0, 255, 0)存储顺序为R-G-B,表示绿色
-        // drawMatches(OriginalGrayImage, keyPoint1, targetGrayImage, keyPoint2, goodMatches, img_out, Scalar::all(-1), CV_RGB(0, 0, 255), Mat(), 2);
+        // drawMatches(temp, keyPoint1, current, keyPoint2, goodMatches, img_out, Scalar::all(-1), CV_RGB(0, 0, 255), Mat(), 2);
         // imshow("Match image", img_out);
-        // cv::waitKey(1);
+        // cv::waitKey(0);
 
         //RANSAC匹配过程
         std::vector<DMatch> m_Matches;
@@ -186,8 +195,20 @@ public:
             {
                 temp_track_points.push_back(RAN_KP1[i].pt);
                 current_track_points.push_back(RAN_KP2[i].pt);
+                // RR_KP1.push_back(RAN_KP1[i]);
+                // RR_KP2.push_back(RAN_KP2[i]);
+                // m_Matches[i].queryIdx = index;
+                // m_Matches[i].trainIdx = index;
+                // RR_matches.push_back(m_Matches[i]);
+                // index++;
             }
         }
+
+        // cv::Mat img_RR_matches;
+        // cv::drawMatches(temp, RR_KP1, current, RR_KP2, RR_matches, img_RR_matches);
+        // imshow("After RANSAC", img_RR_matches);
+        // //等待任意按键按下
+        // cv::waitKey(0);
 
         if (current_track_points.size() < 6)
         {
@@ -209,34 +230,53 @@ int main()
     cv::Mat prev_frame_gray;
     cv::Mat current_frame_gray;
     // std::string base_path = "../data/12_11/60Hz/";
-    std::string base_path = "/home/yucheng/1.feature/data/12_11/60Hz/";
-    std::string current_file_path = base_path + "1.bmp";
+    // std::string base_path = "/home/yucheng/Code/1.Visual_Servoing/1.offline/1.track/yuchengCV2020/data/12_11/60Hz/";
+    std::string base_path = "/home/yucheng/Code/1.Visual_Servoing/2.half_online/visual_servoing/data/image_seq/";
+
+    std::string current_file_path = base_path + "motion_dy.bmp";
     current_frame = cv::imread(current_file_path);
-    int frame_id = 2;
+    int frame_id = 11;
     bool track_failed = true;
 
     std::vector<cv::Point2f> temp_track_points, pre_track_points, current_track_points;
 
     xFeature feature_extractor;
+    // int failed_count = 0;
 
     while (!current_frame.empty())
     {
         //使用灰度图像进行角点检测
         cv::cvtColor(current_frame, current_frame_gray, cv::COLOR_BGR2GRAY);
 
-        cv::Mat temp_frame = cv::imread("../data/temp_color.bmp", -1);
+        // cv::Mat temp_frame = cv::imread("../data/temp_color.bmp", -1);
+        cv::Mat temp_frame = cv::imread("/home/yucheng/Code/1.Visual_Servoing/1.offline/1.track/yuchengCV2020/data/temp_color.bmp", -1);
+        // cv::Mat temp_frame = cv::imread("/home/yucheng/Code/1.Visual_Servoing/1.offline/1.track/yuchengCV2020/data/lena.bmp", -1);
+        // cv::Mat temp_frame = cv::imread("/home/yucheng/Code/1.Visual_Servoing/1.offline/1.track/yuchengCV2020/data/57.bmp", -1);
         cv::Mat temp_frame_gray;
         cv::cvtColor(temp_frame, temp_frame_gray, cv::COLOR_BGR2GRAY);
 
         if (track_failed)
         {
             bool update_secussed = false;
-            // update_secussed = feature_extractor.updateSIFTFeature(temp_frame_gray, current_frame_gray);
 
+            timeval t_start, t_end;
+            clock_t startTime, endTime;
+            gettimeofday(&t_start, NULL);
+            startTime = clock();
+            // update_secussed = feature_extractor.updateSIFTFeature(temp_frame_gray, current_frame_gray);
             update_secussed = feature_extractor.updateEASFeature(temp_frame_gray, current_frame_gray);
+            endTime = clock();
+            gettimeofday(&t_end, NULL);
+            std::cout << "clock_t Time : " << (double)(endTime - startTime) / CLOCKS_PER_SEC << "s" << std::endl;
+            double delta_t = (t_end.tv_sec - t_start.tv_sec) +
+                             (t_end.tv_usec - t_start.tv_usec) / 1000000.0;
+            std::cout << "multi-thread time : " << delta_t << "s" << std::endl;
 
             if (!update_secussed)
             {
+                // failed_count++;
+                // std::string failed_path = "/home/yucheng/Code/1.Visual_Servoing/2.half_online/visual_servoing/data/failed_image/" + num2str<int>(frame_id - 1) + ".bmp";
+                // cv::imwrite(failed_path, current_frame);
                 current_file_path = base_path + num2str<int>(frame_id) + ".bmp";
                 current_frame = cv::imread(current_file_path);
                 frame_id++;
@@ -250,21 +290,11 @@ int main()
             // cornerSubPix(temp_frame_gray, temp_track_points, Size(10,10), Size(-1,-1), TermCriteria(1 | 2, 20, 0.03));
             // cornerSubPix(current_frame_gray, pre_track_points, Size(10,10), Size(-1,-1), TermCriteria(1 | 2, 20, 0.03));
             // current_track_points = feature_extractor.current_track_points;
-            track_failed = false;
+            // track_failed = false;
         }
 
-        // bool extract_successed = feature_extractor.updateSIFTFeature(temp_frame_gray, current_frame_gray);
-
-        // if (extract_successed)
-        // {
-        // for (int i = 0; i < pre_track_points.size(); i++)
-        // {
-        //     circle(current_frame, pre_track_points[i], 3, Scalar(0, 255, 0), -1, 8);
-        // }
-        // cv::imshow("track", current_frame);
-        // cv::waitKey(1);
-        // }
-
+#if USE_OPTICAL_FLOW
+        track_failed = false;
         std::vector<uchar> status;
         std::vector<float> err;
         TermCriteria termcrit(1 | 2, 20, 0.03);
@@ -317,6 +347,7 @@ int main()
             frame_id++;
             continue;
         }
+#endif
 
         for (int i = 0; i < pre_track_points.size(); i++)
         {
@@ -325,12 +356,13 @@ int main()
         }
         cv::imshow("temp", temp_frame);
         cv::imshow("track", current_frame);
-        cv::waitKey(10);
+        cv::waitKey(30);
 
         current_file_path = base_path + num2str<int>(frame_id) + ".bmp";
         current_frame = cv::imread(current_file_path);
         frame_id++;
     }
+    // std::cout << "failed_num = " << failed_count << std::endl;
 
     return 0;
 }
