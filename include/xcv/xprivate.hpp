@@ -203,7 +203,8 @@ CV_EXPORTS void scalarToRawData(const cv::Scalar& s, void* buf, int type, int un
 #define IPP_VERSION_UPDATE 0
 #endif
 
-#define IPP_VERSION_X100 (IPP_VERSION_MAJOR * 100 + IPP_VERSION_MINOR*10 + IPP_VERSION_UPDATE)
+// #define IPP_VERSION_X100 (IPP_VERSION_MAJOR * 100 + IPP_VERSION_MINOR*10 + IPP_VERSION_UPDATE)
+#define IPP_VERSION_X100 -1
 
 // General define for ipp function disabling
 #define IPP_DISABLE_BLOCK 0

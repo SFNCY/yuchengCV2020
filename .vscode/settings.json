@@ -66,6 +66,8 @@
         "unordered_set": "cpp",
         "cfenv": "cpp",
         "valarray": "cpp",
-        "*.txx": "cpp"
+        "*.txx": "cpp",
+        "core": "cpp",
+        "*.ipp": "cpp"
     }
 }
